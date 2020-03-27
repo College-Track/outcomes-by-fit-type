@@ -77,6 +77,13 @@ df2 = pd.read_pickle(in_file2)
 ```
 
 ```python
+df['best_fit'] =  np.where(df['updated_fit_type'] == 'Best Fit', True, False)
+df['good_fit'] =  np.where(df['updated_fit_type'] == 'Good Fit', True, False)
+df['local_affordable'] =  np.where(df['updated_fit_type'] == 'Local Affordable', True, False)
+df['none_fit'] =  np.where(df['updated_fit_type'] == 'None', True, False)
+```
+
+```python
 # Because some data points are limited for historical classes,
 # setting up data frames to deal with various historical limitations 
 
@@ -168,8 +175,8 @@ associations(df_5_year_grades[
     ['graduated_4_year_degree_less_5_years', 'indicator_first_generation',
      'indicator_low_income', '11th_grade_gpa_bucket', 'ethnic_background',
      'year_1_gpa_bucket', 'college_elig_gpa_11th_cgpa',
-     'school', 'updated_fit_type', 'indicator_persisted_into_year_2_ct']
-], theil_u=True, cmap="RdBu", figsize=(8, 6))
+     'school', 'updated_fit_type', 'indicator_persisted_into_year_2_ct', 'best_fit', 'good_fit','local_affordable','none_fit']
+], theil_u=True, cmap="RdBu", figsize=(10, 8))
 ```
 
 ## Regressions
