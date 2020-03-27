@@ -35,6 +35,7 @@ from dython.nominal import correlation_ratio, associations
 import warnings
 
 import statsmodels.formula.api as smf
+import statsmodels.api as sm
 
 # warnings.filterwarnings('ignore')
 
@@ -122,13 +123,18 @@ pd.crosstab(df_matriculation_data.updated_fit_type,
 ```
 
 ```python hidden=true
-pd.crosstab(df_6_year_grades.updated_fit_type,
-            df_6_year_grades.graduated_4_year_degree, normalize='index', margins=True)
+pd.crosstab(df_5_year_grades.updated_fit_type,
+            df_5_year_grades.graduated_4_year_degree, normalize='index', margins=True)
 ```
 
 ```python hidden=true
-pd.crosstab(df_6_year_grades.school,
-            df_6_year_grades.graduated_4_year_degree, normalize=False, margins=True).sort_values(by=True, ascending=False)
+pd.crosstab(df_5_year_grades.updated_fit_type,
+            df_5_year_grades.graduated_4_year_degree, normalize='index', margins=True)
+```
+
+```python hidden=true
+pd.crosstab(df_5_year_grades.school,
+            df_5_year_grades.graduated_4_year_degree, normalize=False, margins=True).sort_values(by=True, ascending=False)
 ```
 
 ```python hidden=true
@@ -166,12 +172,11 @@ pd.crosstab(df.high_school_class, df.updated_fit_type, margins=True)
 
 #### Regressions / Correlations
 
-```python
-df.columns
-```
+
+##### Correlations
 
 ```python
-associations(df_6_year_grades[
+associations(df_5_year_grades[
     ['graduated_4_year_degree', 'indicator_first_generation',
      'indicator_low_income', '11th_grade_gpa_bucket', 'ethnic_background',
      'updated_fit_type', 'year_1_gpa_bucket', 'college_elig_gpa_11th_cgpa',
@@ -181,7 +186,7 @@ associations(df_6_year_grades[
 
 ```python
 
-associations(df_matriculation_data[
+associations(df_4_year_grades[
     ['indicator_college_matriculation', 'indicator_persisted_into_year_2_ct', 'indicator_first_generation',
      'indicator_low_income', '11th_grade_gpa_bucket', 'ethnic_background',
      'updated_fit_type', 'year_1_gpa_bucket', 'college_elig_gpa_11th_cgpa',
@@ -189,28 +194,99 @@ associations(df_matriculation_data[
 ], theil_u=True,cmap="RdBu", figsize=(12,10))
 ```
 
+##### Logit Full DF 5 Year Grad Rate ~ All indicators 
+
 ```python
 def C1(cat):
      return pd.get_dummies(cat, drop_first=True)
 ```
 
 ```python
-df_4_year_grades_best_fit = df_4_year_grades[df_4_year_grades.best_fit == True]
+mod = smf.logit(formula= "C1(graduated_4_year_degree_less_5_years) ~ year_1  + Q('11th_grade') + C(indicator_first_generation, Treatment) + C(updated_fit_type, Sum) + C(indicator_low_income) + C(indicator_persisted_into_year_2_ct)", data=df_5_year_grades).fit(method='bfgs', maxiter=100)
+mod.summary()
 ```
+
+<!-- #region heading_collapsed=true -->
+##### Logit Best Fit Attend  5 Year Grad Rate ~ School
+
+<!-- #endregion -->
+
+```python hidden=true
+df_5_year_grades_best_fit = df_5_year_grades[df_5_year_grades.best_fit == True]
+```
+
+```python hidden=true
+mod = smf.logit(formula="C1(graduated_4_year_degree_less_5_years) ~ C(school, Sum)",
+                data=df_5_year_grades_best_fit).fit(method='nm', maxiter=100000)
+mod.summary()
+```
+
+<!-- #region heading_collapsed=true -->
+##### Logit Above 3.0 GPA  5 Year Grad Rate ~ All Indicators
+
+<!-- #endregion -->
+
+```python hidden=true
+df_5_year_grades_above_3_gpa = df_5_year_grades[df_5_year_grades.year_1 >= 3]
+```
+
+```python hidden=true
+mod = smf.logit(formula= "C1(graduated_4_year_degree_less_5_years) ~ year_1  + Q('11th_grade') + C(indicator_first_generation, Treatment) + C(updated_fit_type, Sum) + C(indicator_low_income) + C(indicator_persisted_into_year_2_ct)", data=df_5_year_grades_above_3_gpa).fit(method='bfgs', maxiter=100)
+mod.summary()
+```
+
+##### Logit Above 3.0 GPA  5 Year Grad Rate ~ School
+
+
+```python
+mod = smf.logit(formula="C1(graduated_4_year_degree_less_5_years) ~ C(school, Sum)",
+                data=df_5_year_grades_above_3_gpa).fit(method='nm', maxiter=100000)
+mod.summary()
+```
+
+##### Logit Below 3.0 GPA  5 Year Grad Rate ~ All Indicators
+
+
+```python
+df_5_year_grades_below_3_gpa = df_5_year_grades[df_5_year_grades.year_1 <= 2.75]
+```
+
+```python
+mod = smf.logit(formula= "C1(graduated_4_year_degree_less_5_years) ~ year_1  + Q('11th_grade') + C(indicator_first_generation, Treatment) + C(updated_fit_type, Sum) + C(indicator_low_income) + C(indicator_persisted_into_year_2_ct)", data=df_5_year_grades_below_3_gpa).fit(method='bfgs', maxiter=100)
+mod.summary()
+
+```
+
+```python
+###
+```
+
+```python
+np.exp(mod.params)
+```
+
+```python
+mod = smf.ols(formula="year_1 ~ C(updated_fit_type, Sum) + C(indicator_first_generation, Treatment) + C(indicator_low_income) + Q('11th_grade')", data=df_5_year_grades_below_3_gpa).fit()
+mod.summary()
+
+```
+
+```python
+mod = smf.logit(formula= "C1(graduated_4_year_degree_less_5_years) ~ year_1  + Q('11th_grade') + C(indicator_first_generation, Treatment) + C(indicator_low_income) + C(indicator_persisted_into_year_2_ct) + C(good_fit, Treatment) +C(none_fit, Treatment) + C(best_fit, Treatment)", data=df_5_year_grades_below_3_gpa).fit(method='bfgs', maxiter=100)
+mod.summary()
+
+
+```
+
+```python
+np.exp(mod.params)
+```
+
+##### Logit Below 3.0 GPA  5 Year Grad Rate ~ School
+
 
 ```python
 (df_4_year_grades[df_4_year_grades.best_fit == True].school.value_counts()>5).value_counts()
-```
-
-```python
-mod = smf.logit(formula="C1(graduated_4_year_degree_less_4_years) ~ C(school)",
-                data=df_4_year_grades_best_fit).fit(method='nm', maxiter=10000)
-mod.summary()
-```
-
-```python
-mod = smf.logit(formula= "C1(graduated_4_year_degree) ~ year_1  + Q('11th_grade') + C(indicator_first_generation, Treatment) + C(updated_fit_type, Sum) + C(indicator_low_income) + C(indicator_persisted_into_year_2_ct)", data=df_6_year_grades).fit(method='bfgs', maxiter=100)
-mod.summary()
 ```
 
 ```python
@@ -219,9 +295,26 @@ mod.summary()
 ```
 
 ```python
-mod = smf.logit(formula= "C1(indicator_persisted_into_year_2_ct) ~ year_1  + Q('11th_grade') + C(indicator_first_generation, Treatment) + C(updated_fit_type, Sum)", data=df_6_year_grades).fit(method='bfgs', maxiter=100)
+mod = smf.logit(formula= "C1(indicator_persisted_into_year_2_ct) ~ year_1  + Q('11th_grade') + C(indicator_first_generation, Treatment) + C(updated_fit_type, Treatment)", data=df_4_year_grades).fit(method='bfgs', maxiter=100)
 mod.summary()
 
+```
+
+```python
+mod = smf.logit(formula= "C1(graduated_4_year_degree_less_5_years) ~ year_1  + Q('11th_grade') + C(indicator_first_generation, Treatment) + C(updated_fit_type, Sum)", data=df_5_year_grades_above_3_gpa).fit(method='bfgs', maxiter=100)
+mod.summary()
+
+```
+
+```python
+mod = smf.logit(formula="C1(graduated_4_year_degree_less_5_years) ~ C(school, Sum)",
+                data=df_5_year_grades_above_3_gpa).fit(method='nm', maxiter=100000)
+mod.summary()
+```
+
+```python
+mod = smf.logit(formula= "C1(graduated_4_year_degree_less_5_years) ~ year_1  + Q('11th_grade') + C(indicator_first_generation, Treatment) + C(best_fit, Treatment)  + C(good_fit, Sum) +C(none_fit, Treatment) + C(local_affordable, Treatment) + C(indicator_low_income) + C(indicator_persisted_into_year_2_ct) + C(school, Sum)", data=df_5_year_grades_above_3_gpa).fit(method='nm', maxiter=1000)
+mod.summary()
 ```
 
 ### Save Excel file into reports directory
