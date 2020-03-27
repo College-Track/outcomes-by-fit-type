@@ -209,8 +209,6 @@ mod.summary()
 
 ##### Odds Ratio for Previous Regression
 
-
-
 ```python
 np.exp(mod.params)
 ```
@@ -237,7 +235,7 @@ $(document).ready(function(){
 
 <style>
 
-// div.prompt {display:none}
+div.prompt {display:none}
 
 
 h1, .h1 {
